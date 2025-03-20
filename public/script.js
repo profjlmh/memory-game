@@ -1,4 +1,4 @@
-const socket = new WebSocket('ws://localhost:8080');
+const socket = new WebSocket('ws:memory-game-production-ce2b.up.railway.app');
 let playerId;
 let score = 0;
 let gameBoard = document.getElementById('gameBoard');
