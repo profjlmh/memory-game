@@ -14,9 +14,9 @@ let flippedCards = [];
 let matchedPairs = 0;
 let gameDuration = 60; // Duración del juego en segundos
 let intervalId;
-let currentPlayer = null; // Para controlar el turno de los jugadores
+let currentPlayer = null; // Controla el turno de los jugadores
 
-// Lista de imágenes (coloca las imágenes en la carpeta /public/img/)
+// Lista de imágenes (coloca las imágenes en /public/img/)
 let images = [
     'img/img1.jpg', 'img/img1.jpg', 'img/img2.jpg', 'img/img2.jpg',
     'img/img3.jpg', 'img/img3.jpg', 'img/img4.jpg', 'img/img4.jpg',
@@ -25,6 +25,7 @@ let images = [
 ];
 images = shuffle(images);
 
+// Función para barajar las imágenes
 function shuffle(array) {
     return array.sort(() => Math.random() - 0.5);
 }
@@ -32,7 +33,7 @@ function shuffle(array) {
 wss.on('connection', function connection(ws) {
     let playerId = `Player-${Math.floor(Math.random() * 1000)}`;
     players[playerId] = { ws, score: 0 };
-    
+
     // Enviar imágenes y temporizador al jugador
     ws.send(JSON.stringify({ type: 'init', playerId, images, gameDuration }));
 
@@ -61,7 +62,6 @@ wss.on('connection', function connection(ws) {
     ws.on('close', () => {
         delete players[playerId];
         if (currentPlayer === playerId) {
-            // Si el jugador que se desconectó es el que tiene el turno, cambiar el turno
             currentPlayer = Object.keys(players)[0];
             broadcast({ type: 'turn', currentPlayer });
         }
@@ -91,6 +91,7 @@ function checkMatch() {
         if (matchedPairs === images.length / 2) {
             broadcast({ type: 'gameOver' });
             clearInterval(intervalId);
+            setTimeout(resetGame, 3000); // Reiniciar el juego en 3 segundos
         }
     } else {
         broadcast({ type: 'unflip', indexes: [player1.index, player2.index] });
@@ -112,8 +113,21 @@ function startTimer() {
         if (gameDuration <= 0) {
             clearInterval(intervalId);
             broadcast({ type: 'gameOver' });
+            setTimeout(resetGame, 3000); // Reiniciar después de 3 segundos
         }
     }, 1000);
+}
+
+// Reiniciar el juego
+function resetGame() {
+    flippedCards = [];
+    matchedPairs = 0;
+    gameDuration = 60; // Reiniciar el tiempo
+    images = shuffle(images); // Barajar imágenes nuevamente
+
+    broadcast({ type: 'gameRestart', images, gameDuration });
+
+    startTimer();
 }
 
 // Enviar datos a todos los clientes
